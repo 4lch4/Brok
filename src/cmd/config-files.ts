@@ -9,7 +9,9 @@ export class ConfigFilesCommand {
 
   private async updateAliases(aliases: string[]) {
     try {
-      logger.debug(`[DEBUG][updateAliases]: Successfully downloaded ${aliases.length} aliases.`)
+      logger.debug(
+        `[ConfigFilesCommand][updateAliases]: Successfully downloaded ${aliases.length} aliases.`
+      )
 
       const scriptContent = `${aliases.join('\n')}\n`
       const scriptPath = join(this.outDir, 'aliases.sh')
@@ -19,7 +21,7 @@ export class ConfigFilesCommand {
         const content = await file.text()
 
         if (content === scriptContent) {
-          logger.success('[SUCCESS][updateAliases]: Aliases are up to date!')
+          logger.success('[ConfigFilesCommand][updateAliases]: Aliases are up to date!')
           return
         }
       }
@@ -28,11 +30,12 @@ export class ConfigFilesCommand {
 
       if (outRes) {
         logger.success(
-          `[SUCCESS][updateAliases]: Successfully wrote aliases to aliases.sh w/ ${outRes} bytes written.`
+          `[ConfigFilesCommand][updateAliases]: Successfully wrote aliases to aliases.sh w/ ${outRes} bytes written.`
         )
-      } else logger.error(`[ERROR][updateAliases]: Failed to write aliases to aliases.sh.`)
+      } else
+        logger.error(`[ConfigFilesCommand][updateAliases]: Failed to write aliases to aliases.sh.`)
     } catch (error) {
-      logger.error(`[ERROR][updateAliases]: Failed to save aliases to aliases.sh.`)
+      logger.error(`[ConfigFilesCommand][updateAliases]: Failed to save aliases to aliases.sh.`)
       logger.error(error)
     }
   }
@@ -46,7 +49,7 @@ export class ConfigFilesCommand {
         const content = await file.text()
 
         if (content === secrets) {
-          logger.success('[SUCCESS][updateSecrets]: Variables are up to date!')
+          logger.success('[ConfigFilesCommand][updateSecrets]: Variables are up to date!')
           return
         }
       }
@@ -55,43 +58,29 @@ export class ConfigFilesCommand {
 
       if (outRes) {
         logger.success(
-          `[SUCCESS][updateSecrets]: Successfully wrote variables to variables.sh w/ ${outRes} bytes written.`
+          `[ConfigFilesCommand][updateSecrets]: Successfully wrote variables to variables.sh w/ ${outRes} bytes written.`
         )
-      } else logger.error(`[ERROR][updateSecrets]: Failed to write variables to variables.sh.`)
+      } else
+        logger.error(
+          `[ConfigFilesCommand][updateSecrets]: Failed to write variables to variables.sh.`
+        )
     } catch (error) {
-      logger.error(`[ERROR][updateSecrets]: Failed to save variables to variables.sh.`)
+      logger.error(`[ConfigFilesCommand][updateSecrets]: Failed to save variables to variables.sh.`)
       logger.error(error)
     }
   }
 
   private getDownloadCmd(config: 'aliases' | 'secrets' | 'variables', suffix: string) {
+    const cmdPrefix = ['doppler', 'secrets', 'download', '-p', 'device-configs']
+    const cmdSuffix = ['--no-file', '2>&1']
+
     switch (config) {
       case 'aliases':
-        return [
-          'doppler',
-          'secrets',
-          'download',
-          '-p',
-          'device-configs',
-          '-c',
-          `aliases_${suffix}`,
-          '--no-file',
-        ]
+        return [...cmdPrefix, '-c', `aliases_${suffix}`, ...cmdSuffix]
 
       case 'secrets':
       case 'variables':
-        return [
-          'doppler',
-          'secrets',
-          'download',
-          '-p',
-          'device-configs',
-          '-c',
-          `secrets_${suffix}`,
-          '--no-file',
-          '--format',
-          'env',
-        ]
+        return [...cmdPrefix, '-c', `secrets_${suffix}`, '--format', 'env', ...cmdSuffix]
     }
   }
 
@@ -103,8 +92,16 @@ export class ConfigFilesCommand {
       const aliasDownloadCmd = this.getDownloadCmd('aliases', suffix)
       const secretDownloadCmd = this.getDownloadCmd('secrets', suffix)
 
-      logger.info(`[INFO][main]: Downloading aliases w/ ${aliasDownloadCmd.join(' ')}`)
-      logger.info(`[INFO][main]: Downloading secrets w/ ${secretDownloadCmd.join(' ')}`)
+      logger.debug(
+        `[ConfigFilesCommand][getDopplerDetails]: Downloading aliases w/ ${aliasDownloadCmd.join(
+          ' '
+        )}`
+      )
+      logger.debug(
+        `[ConfigFilesCommand][getDopplerDetails]: Downloading secrets w/ ${secretDownloadCmd.join(
+          ' '
+        )}`
+      )
 
       const aliasProc = Bun.spawn(aliasDownloadCmd)
       const secretProc = Bun.spawn(secretDownloadCmd)
@@ -112,14 +109,14 @@ export class ConfigFilesCommand {
       const stderr = await new Response(aliasProc.stderr).text()
 
       if (stderr) {
-        logger.error('[ERROR]: Failed to download aliases!')
+        logger.error('[ConfigFilesCommand][getDopplerDetails]: Failed to download aliases!')
         logger.error(stderr)
       }
 
       aliasDetails = await new Response(aliasProc.stdout).json()
       secretDetails = await new Response(secretProc.stdout).text()
     } catch (error) {
-      logger.error(`[ERROR][getDopplerDetails]: Failed to get Doppler details!`)
+      logger.error(`[ConfigFilesCommand][getDopplerDetails]: Failed to get Doppler details!`)
       logger.error(error)
     }
 
@@ -133,8 +130,10 @@ export class ConfigFilesCommand {
     try {
       const { aliasDetails, secretDetails } = await this.getDopplerDetails(suffix)
 
-      logger.info(
-        `[INFO][main]: Successfully downloaded ${Object.keys(aliasDetails).length} aliases.`
+      logger.success(
+        `[ConfigFilesCommand][getConfigDetails]: Successfully downloaded ${
+          Object.keys(aliasDetails).length
+        } aliases.`
       )
 
       if (aliasDetails) {
@@ -145,11 +144,12 @@ export class ConfigFilesCommand {
             aliases.push(`alias ${key.toLowerCase()}='${aliasDetails[key]}'`)
           }
         }
-      } else console.error('[ERROR][main]: Failed to download doppler json!')
+      } else
+        console.error('[ConfigFilesCommand][getConfigDetails]: Failed to download doppler json!')
 
       if (secretDetails) secrets.push(secretDetails)
     } catch (error) {
-      console.error(`[ERROR][getDopplerDetails]: Failed to get Doppler details!`)
+      console.error(`[ConfigFilesCommand][getConfigDetails]: Failed to get Doppler details!`)
       console.error(error)
     }
 
@@ -167,7 +167,7 @@ export class ConfigFilesCommand {
       await this.updateAliases(aliases)
       await this.updateSecrets(secrets)
     } catch (error) {
-      logger.error(`[ERROR][main]: Failed to download aliases!`)
+      logger.error(`[ConfigFilesCommand][run]: Failed to download aliases!`)
       logger.error(error)
     }
   }
