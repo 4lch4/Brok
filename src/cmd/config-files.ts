@@ -2,10 +2,9 @@ import { logger } from '@4lch4/backpack'
 import { Argument, Command, Option, program } from 'commander'
 import { hostname } from 'os'
 import { join } from 'path'
+import { BASH_SCRIPT_STARTER } from '../constants'
 
-const SCRIPT_STARTER = '#!/usr/bin/env bash'
-
-export class ConfigCommand {
+export class ConfigFilesCommand {
   // #region Private Properties & Functions
   private outDir: string = process.cwd()
 
@@ -13,7 +12,7 @@ export class ConfigCommand {
     try {
       logger.debug(`[DEBUG][saveAliases]: Successfully downloaded ${aliases.length} aliases.`)
 
-      const scriptContent = `${SCRIPT_STARTER}\n\n${aliases.join('\n')}\n`
+      const scriptContent = `${BASH_SCRIPT_STARTER}\n\n${aliases.join('\n')}\n`
       const scriptPath = join(this.outDir, 'aliases.sh')
 
       const file = Bun.file(scriptPath)
@@ -43,7 +42,7 @@ export class ConfigCommand {
     try {
       logger.debug(`[DEBUG][saveVariables]: Successfully downloaded ${variables.length} variables.`)
 
-      const scriptContent = `${SCRIPT_STARTER}\n\n${variables.join('\n')}\n`
+      const scriptContent = `${BASH_SCRIPT_STARTER}\n\n${variables.join('\n')}\n`
       const scriptPath = join(this.outDir, 'variables.sh')
 
       const file = Bun.file(scriptPath)
@@ -178,7 +177,7 @@ export class ConfigCommand {
   // #endregion Private Properties & Functions
 
   public async build() {
-    const command = new Command('config')
+    const command = new Command('config-files').alias('cfg').alias('config').alias('cfg')
 
     const outDirArg = new Argument(
       '[outDir]',
