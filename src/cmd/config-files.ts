@@ -1,8 +1,7 @@
 import { logger } from '@4lch4/backpack'
-import { Argument, Command, Option, program } from 'commander'
+import { Argument, Command, Option } from 'commander'
 import { hostname } from 'os'
 import { join } from 'path'
-import { BASH_SCRIPT_STARTER } from '../constants'
 
 export class ConfigFilesCommand {
   // #region Private Properties & Functions
