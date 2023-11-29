@@ -26,6 +26,7 @@ export function buildCreateCommand() {
     .argOptional()
 
   return new Command('create')
+    .alias('c')
     .description('Create a new project')
     .addArgument(templateArg)
     .action(async template => {
