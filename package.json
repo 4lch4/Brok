@@ -2,7 +2,7 @@
   "name": "@4lch4/brok",
   "displayName": "Brok",
   "version": "0.0.0",
-  "description": "A CLI for creating new projects from template repositories.",
+  "description": "A, work in progress, CLI for managing my (@4lch4) infrastructure.",
   "keywords": [
     "Brok"
   ],
@@ -28,13 +28,17 @@
     "brok": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias",
+    "build": "bun build ./src/index.ts --target bun --outfile dist/index.js",
     "lint": "prettier -c .",
+    "prepublishOnly": "bun run build",
     "pretty": "prettier --write .",
-    "start": "node dist/index.js",
+    "start": "bun run dist/index.js",
     "test": "bun test"
   },
   "dependencies": {
@@ -45,14 +49,14 @@
     "figlet": "^1.7.0",
     "fs-extra": "^11.1.1",
     "inquirer": "^9.2.11",
-    "ora": "^7.0.1",
-    "zod": "^3.22.4"
+    "ora": "^7.0.1"
   },
   "devDependencies": {
     "@types/figlet": "^1.5.7",
     "@types/fs-extra": "^11.0.3",
     "@types/inquirer": "^9.0.6",
     "@types/node": "^20.8.10",
+    "bun-types": "^1.0.14",
     "prettier": "^3.0.3",
     "prettier-plugin-organize-imports": "^3.2.3",
     "prettier-plugin-packagejson": "^2.4.6",
