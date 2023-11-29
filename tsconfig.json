@@ -13,6 +13,7 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",
+    "experimentalDecorators": true,
 
     "outDir": "dist",
     "rootDir": "src",
@@ -22,6 +23,12 @@
     // "paths": {
     // 	"@interfaces/*": ["interfaces/*"],
     // },
+
+
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "downlevelIteration": true,
+    "allowJs": true,
 
     "strict": true,
     "strictNullChecks": true,
@@ -37,6 +44,6 @@
     "allowSyntheticDefaultImports": true,
 
     "forceConsistentCasingInFileNames": true,
-    "pretty": true
+    "pretty": true,
   }
 }
