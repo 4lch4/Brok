@@ -9,9 +9,9 @@ export class ConfigFilesCommand {
 
   private async updateAliases(aliases: string[]) {
     try {
-      logger.debug(`[DEBUG][saveAliases]: Successfully downloaded ${aliases.length} aliases.`)
+      logger.debug(`[DEBUG][updateAliases]: Successfully downloaded ${aliases.length} aliases.`)
 
-      const scriptContent = `${BASH_SCRIPT_STARTER}\n\n${aliases.join('\n')}\n`
+      const scriptContent = `${aliases.join('\n')}\n`
       const scriptPath = join(this.outDir, 'aliases.sh')
 
       const file = Bun.file(scriptPath)
@@ -19,7 +19,7 @@ export class ConfigFilesCommand {
         const content = await file.text()
 
         if (content === scriptContent) {
-          logger.success('[SUCCESS][saveAliases]: Aliases are up to date!')
+          logger.success('[SUCCESS][updateAliases]: Aliases are up to date!')
           return
         }
       }
@@ -28,47 +28,43 @@ export class ConfigFilesCommand {
 
       if (outRes) {
         logger.success(
-          `[SUCCESS][saveAliases]: Successfully wrote aliases to aliases.sh w/ ${outRes} bytes written.`
+          `[SUCCESS][updateAliases]: Successfully wrote aliases to aliases.sh w/ ${outRes} bytes written.`
         )
-      } else logger.error(`[ERROR][saveAliases]: Failed to write aliases to aliases.sh.`)
+      } else logger.error(`[ERROR][updateAliases]: Failed to write aliases to aliases.sh.`)
     } catch (error) {
-      logger.error(`[ERROR][saveAliases]: Failed to save aliases to aliases.sh.`)
+      logger.error(`[ERROR][updateAliases]: Failed to save aliases to aliases.sh.`)
       logger.error(error)
     }
   }
 
-  private async updateVariables(variables: string[]) {
+  private async updateSecrets(secrets: string) {
     try {
-      logger.debug(`[DEBUG][saveVariables]: Successfully downloaded ${variables.length} variables.`)
-
-      const scriptContent = `${BASH_SCRIPT_STARTER}\n\n${variables.join('\n')}\n`
-      const scriptPath = join(this.outDir, 'variables.sh')
-
+      const scriptPath = join(this.outDir, 'secrets.env')
       const file = Bun.file(scriptPath)
 
       if (await file.exists()) {
         const content = await file.text()
 
-        if (content === scriptContent) {
-          logger.success('[SUCCESS][saveVariables]: Variables are up to date!')
+        if (content === secrets) {
+          logger.success('[SUCCESS][updateSecrets]: Variables are up to date!')
           return
         }
       }
 
-      const outRes = await Bun.write(scriptPath, scriptContent)
+      const outRes = await Bun.write(scriptPath, secrets)
 
       if (outRes) {
         logger.success(
-          `[SUCCESS][saveVariables]: Successfully wrote variables to variables.sh w/ ${outRes} bytes written.`
+          `[SUCCESS][updateSecrets]: Successfully wrote variables to variables.sh w/ ${outRes} bytes written.`
         )
-      } else logger.error(`[ERROR][saveVariables]: Failed to write variables to variables.sh.`)
+      } else logger.error(`[ERROR][updateSecrets]: Failed to write variables to variables.sh.`)
     } catch (error) {
-      logger.error(`[ERROR][saveVariables]: Failed to save variables to variables.sh.`)
+      logger.error(`[ERROR][updateSecrets]: Failed to save variables to variables.sh.`)
       logger.error(error)
     }
   }
 
-  private getDownloadCmd(config: 'aliases' | 'secrets' | 'variables') {
+  private getDownloadCmd(config: 'aliases' | 'secrets' | 'variables', suffix: string) {
     switch (config) {
       case 'aliases':
         return [
@@ -78,7 +74,7 @@ export class ConfigFilesCommand {
           '-p',
           'device-configs',
           '-c',
-          'aliases',
+          `aliases_${suffix}`,
           '--no-file',
         ]
 
@@ -91,7 +87,7 @@ export class ConfigFilesCommand {
           '-p',
           'device-configs',
           '-c',
-          'aliases',
+          `secrets_${suffix}`,
           '--no-file',
           '--format',
           'env',
@@ -99,10 +95,16 @@ export class ConfigFilesCommand {
     }
   }
 
-  private async getDopplerDetails() {
+  private async getDopplerDetails(suffix: string) {
+    let aliasDetails: { [key: string]: string } = {}
+    let secretDetails: string = ''
+
     try {
-      const aliasDownloadCmd = this.getDownloadCmd('aliases')
-      const secretDownloadCmd = this.getDownloadCmd('secrets')
+      const aliasDownloadCmd = this.getDownloadCmd('aliases', suffix)
+      const secretDownloadCmd = this.getDownloadCmd('secrets', suffix)
+
+      logger.info(`[INFO][main]: Downloading aliases w/ ${aliasDownloadCmd.join(' ')}`)
+      logger.info(`[INFO][main]: Downloading secrets w/ ${secretDownloadCmd.join(' ')}`)
 
       const aliasProc = Bun.spawn(aliasDownloadCmd)
       const secretProc = Bun.spawn(secretDownloadCmd)
@@ -114,21 +116,26 @@ export class ConfigFilesCommand {
         logger.error(stderr)
       }
 
-      return {
-        aliasDetails: (await new Response(aliasProc.stdout).json()) as { [key: string]: string },
-        secretDetails: (await new Response(secretProc.stdout).json()) as { [key: string]: string },
-      }
+      aliasDetails = await new Response(aliasProc.stdout).json()
+      secretDetails = await new Response(secretProc.stdout).text()
     } catch (error) {
-      throw error
+      logger.error(`[ERROR][getDopplerDetails]: Failed to get Doppler details!`)
+      logger.error(error)
     }
+
+    return { aliasDetails, secretDetails }
   }
 
-  private async getConfigDetails() {
+  private async getConfigDetails(suffix: string) {
     const secrets: string[] = []
     const aliases: string[] = []
 
     try {
-      const { aliasDetails, secretDetails } = await this.getDopplerDetails()
+      const { aliasDetails, secretDetails } = await this.getDopplerDetails(suffix)
+
+      logger.info(
+        `[INFO][main]: Successfully downloaded ${Object.keys(aliasDetails).length} aliases.`
+      )
 
       if (aliasDetails) {
         // Iterate over each key in the object to create their alias commands.
@@ -140,34 +147,25 @@ export class ConfigFilesCommand {
         }
       } else console.error('[ERROR][main]: Failed to download doppler json!')
 
-      if (secretDetails) {
-        // Iterate over each key in the object to create the array of secrets.
-        for (const key of Object.keys(secretDetails)) {
-          // If the key starts with doppler_ then it's actually a Doppler value I want to ignore.
-          if (!key.toLowerCase().startsWith('doppler_')) {
-            secrets.push(`${key}='${secretDetails[key]}'`)
-          }
-        }
-      }
+      if (secretDetails) secrets.push(secretDetails)
     } catch (error) {
       console.error(`[ERROR][getDopplerDetails]: Failed to get Doppler details!`)
       console.error(error)
     }
 
-    return { aliases, secrets }
+    return { aliases, secrets: secrets.join('\n') }
   }
 
-  private async run(outDir?: string) {
+  private async run({ outDir, opts }: { outDir?: string; opts: { suffix?: string } }) {
     try {
       if (outDir) this.outDir = outDir
-      const opts = program.opts()
 
-      logger.info(`[INFO][main]: Received opts ${JSON.stringify(opts, null, 2)}`)
-
-      const { aliases, secrets } = await this.getConfigDetails()
+      const { aliases, secrets } = await this.getConfigDetails(
+        opts.suffix || hostname().toLowerCase()
+      )
 
       await this.updateAliases(aliases)
-      await this.updateVariables(secrets)
+      await this.updateSecrets(secrets)
     } catch (error) {
       logger.error(`[ERROR][main]: Failed to download aliases!`)
       logger.error(error)
@@ -194,8 +192,7 @@ export class ConfigFilesCommand {
       .description('Creates the latest config files for the local machine.')
       .addArgument(outDirArg)
       .addOption(configSuffix)
-
-      .action(this.run)
+      .action(async (outDir, opts) => this.run({ outDir, opts }))
 
     return command
   }
