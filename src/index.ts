@@ -29,4 +29,4 @@ async function setup() {
   }
 }
 
-setup().then(console.log).catch(console.error)
+setup().catch(console.error)
