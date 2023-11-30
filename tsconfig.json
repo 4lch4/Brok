@@ -20,9 +20,9 @@
     "removeComments": false,
 
     "baseUrl": "./src",
-    // "paths": {
-    // 	"@interfaces/*": ["interfaces/*"],
-    // },
+    "paths": {
+    	"~/*": ["*"]
+    },
 
 
     "skipLibCheck": true,
