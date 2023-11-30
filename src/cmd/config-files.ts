@@ -2,8 +2,9 @@ import { logger } from '@4lch4/backpack'
 import { Argument, Command, Option } from 'commander'
 import { hostname } from 'os'
 import { join } from 'path'
+import { BaseCmd } from '~/lib/index'
 
-export class ConfigFilesCommand {
+export class ConfigFilesCommand extends BaseCmd {
   // #region Private Properties & Functions
   private outDir: string = process.cwd()
 

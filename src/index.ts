@@ -5,7 +5,7 @@ import { readPackageJSON } from '@4lch4/backpack/utils'
 import { program } from 'commander'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { ConfigFilesCommand, buildCreateCommand } from './cmd'
+import { buildCommands } from './cmd'
 import { PackageJSON } from './types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -18,8 +18,9 @@ async function setup() {
 
     const Brok = program.name(pkg.name).description(pkg.description).version(pkg.version)
 
-    Brok.addCommand(await new ConfigFilesCommand().build())
-    Brok.addCommand(buildCreateCommand())
+    for (const command of await buildCommands()) {
+      Brok.addCommand(command)
+    }
 
     return Brok.parse(process.argv)
   } catch (error) {
