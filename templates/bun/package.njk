@@ -1,0 +1,57 @@
+{
+  "name": "{{ project.name }}",
+  "displayName": "{{ project.displayName }}",
+  "version": "0.0.0",
+  "description": "{{ project.description }}",
+  "keywords": [
+    "4lch4"
+  ],
+  "homepage": "https://github.com/4lch4/{{ project.displayName }}",
+  "bugs": {
+    "url": "https://github.com/4lch4/{{ project.displayName }}/issues",
+    "email": "bugs@4lch4.email"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/4lch4/{{ project.displayName }}.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "4lch4",
+    "email": "hey@4lch4.email",
+    "url": "https://4lch4.com"
+  },
+  "type": "module",
+  "exports": "./dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --target bun --outfile dist/index.js",
+    "lint": "prettier -c .",
+    "prepublishOnly": "bun run build",
+    "pretty": "prettier --write .",
+    "start": "bun run dist/index.js",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.0.25",
+    "@types/node": "^20.8.10",
+    "prettier": "^3.0.3",
+    "prettier-plugin-organize-imports": "^3.2.3",
+    "prettier-plugin-packagejson": "^2.4.6"
+  },
+  "peerDependencies": {
+    "bun": "^1.0.25",
+    "tsc-alias": "^1.0.0",
+    "typescript": "^5.2.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
